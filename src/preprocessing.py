@@ -1,7 +1,7 @@
 import re
 from datasets import load_dataset
 
-dataset = load_dataset("trec")
+dataset = load_dataset("trec",trust_remote_code=True)
 
 
 def clean_text(text):
