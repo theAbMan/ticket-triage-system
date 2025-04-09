@@ -1,5 +1,19 @@
+import os
+os.environ["TRANSFORMERS_NO_TF"] = "1"
+
 from fastapi import FastAPI
 from app.schemas import TicketRequest, TicketResponse
+from transformers import pipeline
+
+
+CATEGORIES = [
+    "Billing Issue",
+    "Technical Problem",
+    "Account Management",
+    "General Inquiry",
+    "Cancellation Request",
+    "Product Feedback"
+]
 
 app = FastAPI()
 
@@ -9,6 +23,10 @@ def health_check():
 
 @app.post("/classify", response_model=TicketResponse)
 def classify_ticket(ticket:TicketRequest):
-    text = ticket.text
+    if not hasattr(classify_ticket, "classifier"):
+        classify_ticket.classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli",framework='pt')
 
-    return TicketResponse(category="Billing Issue") #dummy return value
+    result = classify_ticket.classifier(ticket.text, CATEGORIES)
+    top_category = result['labels'][0]
+
+    return TicketResponse(category= top_category)

@@ -2,3 +2,5 @@ datasets
 fastapi
 uvicorn
 httpx
+transformers[torch]
+torch
