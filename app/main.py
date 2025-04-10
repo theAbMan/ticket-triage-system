@@ -3,7 +3,9 @@ os.environ["TRANSFORMERS_NO_TF"] = "1"
 
 from fastapi import FastAPI
 from app.schemas import TicketRequest, TicketResponse
-from transformers import pipeline
+from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
+import torch
+import json
 
 
 CATEGORIES = [
@@ -14,6 +16,22 @@ CATEGORIES = [
     "Cancellation Request",
     "Product Feedback"
 ]
+
+label_map = {
+    "ABBR": "General Inquiry",
+    "DESC": "General Inquiry",
+    "ENTY": "Product Feedback",
+    "HUM": "Account Management",
+    "LOC": "Technical Problem",
+    "NUM": "Billing Issue"
+}
+
+with open("model-distilbert/labels.json", "r") as f:
+    label_names = json.load(f)
+
+custom_tokenizer = AutoTokenizer.from_pretrained("model-distilbert")
+custom_model = AutoModelForSequenceClassification.from_pretrained("model-distilbert")
+custom_model.eval()
 
 app = FastAPI()
 
@@ -30,3 +48,12 @@ def classify_ticket(ticket:TicketRequest):
     top_category = result['labels'][0]
 
     return TicketResponse(category= top_category)
+
+@app.post("/custom_classify",response_model=TicketResponse)
+def custom_classify(ticket:TicketRequest):
+    inputs = custom_tokenizer(ticket.text, return_tensors="pt", truncation=True, padding=True)
+    with torch.no_grad():
+        outputs = custom_model(**inputs)
+        probs = torch.nn.functional.softmax(outputs.logits, dim=-1)
+        pred = torch.argmax(probs,dim=1).item()
+    return TicketResponse(category=label_map[label_names[pred]])

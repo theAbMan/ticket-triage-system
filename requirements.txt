@@ -4,3 +4,4 @@ uvicorn
 httpx
 transformers[torch]
 torch
+scikit-learn
