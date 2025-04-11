@@ -11,6 +11,7 @@ from pathlib import Path
 
 config = yaml.safe_load(open("config.yaml"))
 VERSION = config["model"]["version"]
+IS_CI = os.getenv("CI", "false").lower() == "true"
 
 
 
@@ -38,9 +39,15 @@ label_map = {
 with open(f"model-distilbert/{VERSION}/labels.json", "r") as f:
     label_names = json.load(f)
 
-custom_tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
-custom_model = AutoModelForSequenceClassification.from_pretrained(MODEL_PATH)
-custom_model.eval()
+
+if not IS_CI:
+    custom_tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
+    custom_model = AutoModelForSequenceClassification.from_pretrained(MODEL_PATH)
+    custom_model.eval()
+
+else:
+    custom_tokenizer = None
+    custom_model = None
 
 app = FastAPI()
 
@@ -60,6 +67,9 @@ def classify_ticket(ticket:TicketRequest):
 
 @app.post("/custom_classify",response_model=TicketResponse)
 def custom_classify(ticket:TicketRequest):
+    if IS_CI:
+        return TicketResponse(category="(CI Mode: No Model Loaded)")
+
     inputs = custom_tokenizer(ticket.text, return_tensors="pt", truncation=True, padding=True)
     with torch.no_grad():
         outputs = custom_model(**inputs)
