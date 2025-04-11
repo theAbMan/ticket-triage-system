@@ -6,16 +6,25 @@ from app.schemas import TicketRequest, TicketResponse
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 import torch
 import json
+import yaml
+from pathlib import Path
+
+config = yaml.safe_load(open("config.yaml"))
+VERSION = config["model"]["version"]
 
 
-CATEGORIES = [
-    "Billing Issue",
-    "Technical Problem",
-    "Account Management",
-    "General Inquiry",
-    "Cancellation Request",
-    "Product Feedback"
-]
+
+# CATEGORIES = [
+#     "Billing Issue",
+#     "Technical Problem",
+#     "Account Management",
+#     "General Inquiry",
+#     "Cancellation Request",
+#     "Product Feedback"
+# ]
+
+CATEGORIES = config['model']['labels']
+MODEL_PATH = Path("model-distilbert")/VERSION
 
 label_map = {
     "ABBR": "General Inquiry",
@@ -26,11 +35,11 @@ label_map = {
     "NUM": "Billing Issue"
 }
 
-with open("model-distilbert/labels.json", "r") as f:
+with open(f"model-distilbert/{VERSION}/labels.json", "r") as f:
     label_names = json.load(f)
 
-custom_tokenizer = AutoTokenizer.from_pretrained("model-distilbert")
-custom_model = AutoModelForSequenceClassification.from_pretrained("model-distilbert")
+custom_tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
+custom_model = AutoModelForSequenceClassification.from_pretrained(MODEL_PATH)
 custom_model.eval()
 
 app = FastAPI()

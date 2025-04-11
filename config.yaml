@@ -1,0 +1,26 @@
+model:
+  name: distilbert
+  version: v3
+  labels:
+    - Billing Issue
+    - Technical Problem
+    - Account Management
+    - General Inquiry
+    - Cancellation Request
+    - Product Feedback
+
+training:
+  v1:
+    epochs: 3
+    learning_rate: 5e-5
+    seed: 42
+  
+  v2:
+    epochs: 5
+    learning_rate: 3e-5
+    seed: 99
+
+  v3:
+    epochs: 7
+    learning_rate: 1e-4
+    seed: 54

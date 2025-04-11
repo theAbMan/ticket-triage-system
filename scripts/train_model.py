@@ -4,6 +4,15 @@ from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 import numpy as np
 import os
 import json
+import yaml
+
+config = yaml.safe_load(open("config.yaml"))
+current_version = config['model']['version']
+training_config = config['training'][current_version]
+epochs = int(training_config['epochs'])
+lr = float(training_config['learning_rate'])
+seed = int(training_config['seed'])
+
 
 # Load and prepare dataset
 dataset = load_dataset("trec")
@@ -33,13 +42,15 @@ def compute_metrics(eval_pred):
 
 # Training setup
 args = TrainingArguments(
-    output_dir="./model-distilbert",
+    output_dir=f"./model-distilbert/{current_version}",
     eval_strategy="epoch",
     logging_strategy="epoch",
     save_strategy="epoch",
     per_device_train_batch_size=16,
     per_device_eval_batch_size=16,
-    num_train_epochs=3,
+    num_train_epochs=epochs,
+    learning_rate=lr,
+    seed=seed,
     weight_decay=0.01,
     save_total_limit=1,
 )
